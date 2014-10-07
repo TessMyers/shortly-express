@@ -2,7 +2,7 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-
+var cookieParser = require('cookie-parser');
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -20,28 +20,49 @@ app.use(partials());
 app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
+// Add cookieParser
+app.use(cookieParser());
+
 app.use(express.static(__dirname + '/public'));
 
 
-app.get('/', 
-function(req, res) {
+app.get('/', function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
-function(req, res) {
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
+
+app.post('/signup', function(req, res) {
+  app.checkUser(req.body.username, function(model){
+    if (model) {
+      alert('This username is already taken, please choose another one');
+      res.redirect('/signup');
+    } else {
+      User.handlePassword(req.body, function(salt, hashedPW){
+        new User.UserRecord({
+          username: req.body.username,
+          salt: salt,
+          hashword: hashedPW
+        }).save();
+        res.redirect('/login');
+      });
+    }
+  });
+});
+
+app.get('/create', function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
-function(req, res) {
+app.get('/links', function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
-function(req, res) {
+app.post('/links', function(req, res) {
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
@@ -78,6 +99,19 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+// function that checks for auth
+//
+app.checkCookies = function(){
+  //check for cookies. obviously.
+}
+
+app.checkUser = function(username, callback){
+  new User.UserRecord({ username: username })
+    .fetch()
+    .then(function(model){
+      callback(model);
+    });
+};
 
 
 /************************************************************/
