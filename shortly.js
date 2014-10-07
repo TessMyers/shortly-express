@@ -53,7 +53,7 @@ app.get('/signup', function(req, res) {
 app.post('/signup', function(req, res) {
   app.checkUser(req.body.username, function(model){
     if (model) {
-      res.send("This username is already taken, please choose another one");
+      res.send(205);
     } else {
       User.handlePassword(req.body, function(salt, hashedPW){
         new User.UserRecord({
@@ -61,7 +61,8 @@ app.post('/signup', function(req, res) {
           salt: salt,
           hashword: hashedPW
         }).save();
-        res.redirect('/login');
+        res.cookie('username', req.body.username, {maxAge: "session", httpOnly: true});
+        res.redirect('/');
       });
     }
   });
@@ -74,8 +75,7 @@ app.get('/login', function(req, res){
 app.post('/login', function(req, res){
   app.checkUser(req.body.username, function(model){
     if (!model) {
-      //res.send("<script> alert('Oops! Something went wrong. Username and password do not match')</script>");
-      res.redirect('/signup');
+      res.redirect('/login');
     } else {
       app.checkPassword(req.body, function(auth){
         if (!auth) {
@@ -136,6 +136,10 @@ app.post('/links', function(req, res) {
   });
 });
 
+app.get('/logout', function(req, res){
+  res.cookie('username', null, {maxAge: "session", httpOnly: true});
+  res.redirect('/login');
+});
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
@@ -143,6 +147,9 @@ app.post('/links', function(req, res) {
 // function that checks for auth
 //
 app.checkCookies = function(cookie, callback){
+  if (!cookie) {
+    callback();
+  }
   app.checkUser(cookie.username, function(model){
     callback(model);
   });

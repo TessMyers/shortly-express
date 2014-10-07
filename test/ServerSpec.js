@@ -63,10 +63,11 @@ describe('', function() {
 
     var requestWithSession = request.defaults({jar: true});
 
-    xbeforeEach(function(done){      // create a user that we can then log-in with
-      new User({
+    beforeEach(function(done){      // create a user that we can then log-in with
+      new User.UserRecord({
           'username': 'Phillip',
-          'password': 'Phillip'
+          'hashword': '$2a$10$Mysa74xkA6yRCe8eaoq66eFpODyJvuH5.qqzctrzubbNk8DPlyNWm',
+          'salt': '$2a$10$Mysa74xkA6yRCe8eaoq66e'
       }).save().then(function(){
         var options = {
           'method': 'POST',
@@ -290,9 +291,10 @@ describe('', function() {
     var requestWithSession = request.defaults({jar: true});
 
     beforeEach(function(done){
-      new User({
-          'username': 'Phillip',
-          'password': 'Phillip'
+      new User.UserRecord({
+        'username': 'Phillip',
+        'hashword': '$2a$10$Mysa74xkA6yRCe8eaoq66eFpODyJvuH5.qqzctrzubbNk8DPlyNWm',
+        'salt': '$2a$10$Mysa74xkA6yRCe8eaoq66e'
       }).save().then(function(){
         done();
       });

@@ -3,6 +3,6 @@ var User = require('../models/user');
 
 var Users = new db.Collection();
 
-Users.model = User;
+Users.model = User.UserRecord;
 
 module.exports = Users;
