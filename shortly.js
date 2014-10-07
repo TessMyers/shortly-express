@@ -27,7 +27,23 @@ app.use(express.static(__dirname + '/public'));
 
 
 app.get('/', function(req, res) {
-  res.render('index');
+  app.checkCookies(req.cookies, function(model){
+    if (model) {
+      res.render('index');
+    } else {
+      res.redirect('/login');
+    }
+  });
+});
+
+app.get('/create', function(req, res) {
+  app.checkCookies(req.cookies, function(model){
+    if (model) {
+      res.render('index');
+    } else {
+      res.redirect('/login');
+    }
+  });
 });
 
 app.get('/signup', function(req, res) {
@@ -37,8 +53,7 @@ app.get('/signup', function(req, res) {
 app.post('/signup', function(req, res) {
   app.checkUser(req.body.username, function(model){
     if (model) {
-      alert('This username is already taken, please choose another one');
-      res.redirect('/signup');
+      res.send("This username is already taken, please choose another one");
     } else {
       User.handlePassword(req.body, function(salt, hashedPW){
         new User.UserRecord({
@@ -52,14 +67,40 @@ app.post('/signup', function(req, res) {
   });
 });
 
-app.get('/create', function(req, res) {
-  res.render('index');
+app.get('/login', function(req, res){
+  res.render('login');
+});
+
+app.post('/login', function(req, res){
+  app.checkUser(req.body.username, function(model){
+    if (!model) {
+      //res.send("<script> alert('Oops! Something went wrong. Username and password do not match')</script>");
+      res.redirect('/signup');
+    } else {
+      app.checkPassword(req.body, function(auth){
+        if (!auth) {
+          res.send("Oops! Something went wrong. Username and password do not match");
+        } else {
+          //req.cookies.userAuth = req.body.username + "isAuth";
+          res.cookie('username', req.body.username, {maxAge: "session", httpOnly: true});
+          res.redirect('/');
+        }
+      });
+    }
+  });
 });
 
 app.get('/links', function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
+  app.checkCookies(req.cookies, function(model){
+    if (model) {
+      Links.reset().fetch().then(function(links) {
+        res.send(200, links.models);
+      });
+    } else {
+      res.redirect('/login');
+    }
   });
+
 });
 
 app.post('/links', function(req, res) {
@@ -101,15 +142,31 @@ app.post('/links', function(req, res) {
 
 // function that checks for auth
 //
-app.checkCookies = function(){
-  //check for cookies. obviously.
-}
+app.checkCookies = function(cookie, callback){
+  app.checkUser(cookie.username, function(model){
+    callback(model);
+  });
+};
 
 app.checkUser = function(username, callback){
   new User.UserRecord({ username: username })
     .fetch()
     .then(function(model){
       callback(model);
+    });
+};
+
+app.checkPassword = function(body, callback){
+  new User.UserRecord({ username: body.username})
+    .fetch()
+    .then(function(model){
+      User.checkPassword(body, model, function(hashedPW){
+        if (hashedPW === model.get('hashword')) {
+          callback(true);
+        } else {
+          callback(false);
+        }
+      });
     });
 };
 

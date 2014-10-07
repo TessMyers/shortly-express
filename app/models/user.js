@@ -15,3 +15,10 @@ exports.handlePassword = function(userInfo, callback) {
     });
   });
 };
+
+exports.checkPassword = function(body, model, callback){
+  bcrypt.hash(body.password, model.get('salt'), null, function(err, hashedPW){
+    if (err) throw err;
+    callback(hashedPW);
+  });
+};

@@ -296,7 +296,7 @@ describe('', function() {
       }).save().then(function(){
         done();
       });
-    });
+    })
 
     it('Logs in existing users', function(done) {
       var options = {
